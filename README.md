@@ -163,5 +163,7 @@ MIT License
 
 ## 联系方式（Contact）
 如有问题或建议，请通过以下方式联系我们：
-- 邮箱：[your-email@example.com]
-- GitHub：[your-github-repo]
+- 微信：xiao142000
+- QQ：1036698712
+- 邮箱：myloveisphp@126.com
+- GitHub：https://github.com/xiaofang142/MarketingToolsKit
