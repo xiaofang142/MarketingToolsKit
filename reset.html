@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>重置初始化状态</title>
+</head>
+<body>
+    <h1>重置初始化状态</h1>
+    <button onclick="resetInit()">重置</button>
+    <div id="result"></div>
+    
+    <script>
+        function resetInit() {
+            localStorage.removeItem('system_initialized');
+            localStorage.removeItem('apiConfig');
+            document.getElementById('result').innerHTML = '初始化状态已重置';
+            console.log('初始化状态已重置');
+        }
+    </script>
+</body>
+</html>

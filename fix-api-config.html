@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>修复API配置</title>
+</head>
+<body>
+    <h1>修复API配置</h1>
+    <button onclick="fixApiConfig()">修复API配置为8086端口</button>
+    <button onclick="showStorage()">显示localStorage内容</button>
+    <div id="output"></div>
+    
+    <script>
+        function fixApiConfig() {
+            // 获取当前的API配置
+            let apiConfig = localStorage.getItem('apiConfig');
+            if (apiConfig) {
+                try {
+                    const config = JSON.parse(apiConfig);
+                    console.log('原始配置:', config);
+                    
+                    // 修改端口从8088到8086
+                    if (config.baseUrl) {
+                        config.baseUrl = config.baseUrl.replace(':8088', ':8086');
+                    }
+                    
+                    // 保存修改后的配置
+                    localStorage.setItem('apiConfig', JSON.stringify(config));
+                    document.getElementById('output').innerHTML = 'API配置已修复: ' + JSON.stringify(config, null, 2);
+                } catch (e) {
+                    console.error('解析API配置失败:', e);
+                    document.getElementById('output').innerHTML = '解析API配置失败: ' + e.message;
+                }
+            } else {
+                // 如果没有API配置，创建一个新的
+                const newConfig = {
+                    baseUrl: 'http://localhost:8086'
+                };
+                localStorage.setItem('apiConfig', JSON.stringify(newConfig));
+                document.getElementById('output').innerHTML = '已创建新的API配置: ' + JSON.stringify(newConfig, null, 2);
+            }
+        }
+        
+        function showStorage() {
+            let output = '<h2>localStorage内容:</h2>';
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                const value = localStorage.getItem(key);
+                output += `<p><strong>${key}:</strong> ${value}</p>`;
+            }
+            document.getElementById('output').innerHTML = output;
+        }
+    </script>
+</body>
+</html>

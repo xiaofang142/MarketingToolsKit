@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>清除localStorage</title>
+</head>
+<body>
+    <h1>清除localStorage</h1>
+    <button onclick="clearStorage()">清除所有localStorage</button>
+    <button onclick="showStorage()">显示localStorage内容</button>
+    <div id="output"></div>
+    
+    <script>
+        function clearStorage() {
+            localStorage.clear();
+            document.getElementById('output').innerHTML = 'localStorage已清除';
+        }
+        
+        function showStorage() {
+            let output = '<h2>localStorage内容:</h2>';
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                const value = localStorage.getItem(key);
+                output += `<p><strong>${key}:</strong> ${value}</p>`;
+            }
+            document.getElementById('output').innerHTML = output;
+        }
+    </script>
+</body>
+</html>
