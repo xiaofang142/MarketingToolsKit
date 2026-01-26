@@ -3,8 +3,8 @@ import { http } from '@/utils/request'
 // 账号管理相关API
 export const accountApi = {
   // 获取有效账号列表
-  getAccounts() {
-    return http.get('/api/accounts/list')
+  getAccounts(params = {}) {
+    return http.get('/api/accounts/list', { params })
   },
   
   // 添加账号
@@ -22,9 +22,9 @@ export const accountApi = {
     return http.delete(`/api/accounts/delete/${id}`)
   },
   // 启动账号
-  // runAccount(id) {
-  //   return http.get(`/api/accounts/run/${id}`)
-  // },
+  runAccount(id) {
+    return http.post(`/api/accounts/run/${id}`)
+  },
   // 统计
   // getAccountsStatistics() {
   //   return http.get('/account/statistics')

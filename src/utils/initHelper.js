@@ -34,7 +34,7 @@ export const createDefaultAdmin = async () => {
     console.log('正在创建默认管理员账户...')
     
     // 调用创建默认管理员的公开API端点
-    const response = await http.post('/api/auth/init-admin')
+    const response = await http.post('/api/system/create-default-admin')
     console.log('默认管理员账户创建成功:', response)
     return response
   } catch (error) {

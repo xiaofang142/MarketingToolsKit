@@ -14,7 +14,9 @@ export const xianyuAutoReplyApi = {
     return http.post('/api/xianyu/auto-reply/login/start', data)
   },
   loginStatus(username) {
-    return http.get('/api/xianyu/auto-reply/login/status', { username })
+    return http.get('/api/xianyu/auto-reply/login/status', { 
+      params: { username }
+    })
   },
   saveCookies(id, cookie) {
     return http.post(`/api/xianyu/auto-reply/accounts/${id}/cookies`, { cookie })
@@ -26,12 +28,14 @@ export const xianyuAutoReplyApi = {
     return http.post('/api/xianyu/auto-reply/rules', data)
   },
   listLogs({ page = 1, page_size = 10 } = {}) {
-    return http.get('/api/xianyu/auto-reply/logs', { page, page_size })
+    return http.get('/api/xianyu/auto-reply/logs', { 
+      params: { page, page_size }
+    })
   },
-  start() {
-    return http.post('/api/xianyu/auto-reply/start', {})
+  start(data) {
+    return http.post('/api/xianyu-auto-reply/start', data)
   },
-  stop() {
-    return http.post('/api/xianyu/auto-reply/stop', {})
+  stop(data) {
+    return http.post('/api/xianyu-auto-reply/stop', data)
   }
 }

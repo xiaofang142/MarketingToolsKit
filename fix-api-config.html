@@ -33,7 +33,7 @@
             } else {
                 // 如果没有API配置，创建一个新的
                 const newConfig = {
-                    baseUrl: 'http://localhost:8086'
+                    baseUrl: window.location.origin.replace(/:\d+$/, ':8086') // 替换端口号为8086
                 };
                 localStorage.setItem('apiConfig', JSON.stringify(newConfig));
                 document.getElementById('output').innerHTML = '已创建新的API配置: ' + JSON.stringify(newConfig, null, 2);

@@ -24,8 +24,8 @@ export const emailApi = {
   
   // 新增：草稿箱相关API
   // 获取草稿列表
-  getDrafts() {
-    return http.get('/api/email/drafts')
+  getDrafts(params = {}) {
+    return http.get('/api/email/drafts', { params })
   },
   
   // 获取单个草稿详情
@@ -62,7 +62,12 @@ export const emailApi = {
     return http.post('/api/email/list', data)
   },
   getEmailList: (page,limit) => {
-    return http.get(`/api/email/list?page=${page}&limit=${limit}`)
+    return http.get('/api/email/list', { 
+      params: { 
+        page,
+        limit 
+      } 
+    })
   },
   
   // 删除已发送邮件
@@ -70,7 +75,12 @@ export const emailApi = {
 
   // 获取任务列表
   getJobsList(page,limit) {
-    return http.get(`/api/email/jobs?page=${page}&limit=${limit}`)
+    return http.get('/api/email/jobs', { 
+      params: { 
+        page,
+        limit 
+      } 
+    })
   },
   // 删除任务
   deleteJob(id) {

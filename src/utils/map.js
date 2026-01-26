@@ -2,7 +2,7 @@
 export const getPlatformTag = (type) => {
   const typeMap = {
     '1': 'success',
-    '3': 'danger',
+    '2': 'danger',
     '3': 'warning',
     '4': 'info'
   }
@@ -49,10 +49,9 @@ export const getStatusName = (status) => {
     '5': '进行中',
     '8': '已失败',
     '9': '已取消',
-    '10': '已完成',
-
+    '10': '已完成'
   }
-  return typeMap[status] || 'info'
+  return typeMap[status] || '未知'
 }
 
 

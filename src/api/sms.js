@@ -11,7 +11,7 @@ export default {
   
   // 短信列表
   getSmsList(params) {
-    return http.get('/api/sms/list', params)
+    return http.get('/api/sms/list', { params })
   },
   getSmsDetail(id) {
     return http.get(`/api/sms/detail/${id}`)
@@ -25,7 +25,7 @@ export default {
   
   // 草稿相关
   getDraftList(params) {
-    return http.get('/api/sms/draft/list', params)
+    return http.get('/api/sms/draft/list', { params })
   },
   getDraftDetail(id) {
     return http.get(`/api/sms/draft/${id}`)
@@ -45,7 +45,7 @@ export default {
   
   // 任务相关
   getJobList(params) {
-    return http.get('/api/sms/job/list', params)
+    return http.get('/api/sms/job/list', { params })
   },
   getJobDetail(id) {
     return http.get(`/api/sms/job/${id}`)
@@ -66,6 +66,6 @@ export default {
     return http.delete(`/api/sms/job/${id}`)
   },
   getJobRecords(id, params) {
-    return http.get(`/api/sms/job/${id}/records`, params)
+    return http.get(`/api/sms/job/${id}/records`, { params })
   }
 }

@@ -8,7 +8,12 @@ export const clueApi = {
     return http.delete(`/api/clues/delete/${id}`)
   },
   list: (page,limit) => {
-    return http.get(`/api/clues/list?page=${page}&limit=${limit}`)
+    return http.get('/api/clues/list', { 
+      params: { 
+        page,
+        limit 
+      } 
+    })
   },
   statistics: () => {
     return http.get(`/api/clues/statistics`)

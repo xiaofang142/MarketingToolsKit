@@ -7,6 +7,12 @@
           <el-table :data="accounts" size="small" style="width: 100%">
             <el-table-column prop="username" label="账号" />
             <el-table-column prop="is_active" label="状态" />
+            <el-table-column label="机器人状态" width="120">
+              <template #default>
+                <span :class="['status-indicator', botStatus.running ? 'status-running' : 'status-stopped']"></span>
+                {{ botStatus.running ? '运行中' : '已停止' }}
+              </template>
+            </el-table-column>
             <el-table-column label="操作" width="220">
               <template #default="{ row }">
                 <el-button size="small" @click="handleSaveCookie(row)">保存Cookie</el-button>
@@ -23,25 +29,78 @@
       <div class="panel">
         <el-card class="panel-card">
           <div class="section-title">回复规则</div>
-          <el-form :model="rule" label-width="90px" size="small">
+          <el-form :model="rule" label-width="100px" size="small">
             <el-form-item label="关键词">
-              <el-input v-model="rule.keywords" type="textarea" />
+              <el-input 
+                v-model="rule.keywords" 
+                type="textarea" 
+                placeholder="请输入关键词，多个关键词用逗号分隔，例如：你好,咨询,价格" 
+                :rows="2"
+              />
+              <div class="form-help-text">多个关键词用逗号分隔，支持模糊匹配</div>
             </el-form-item>
-            <el-form-item label="话术">
-              <el-input v-model="rule.reply_content" type="textarea" />
+            <el-form-item label="回复内容">
+              <el-input 
+                v-model="rule.reply_content" 
+                type="textarea" 
+                placeholder="请输入回复内容，支持变量：{username}（用户名）" 
+                :rows="3"
+              />
+              <div class="form-help-text">支持变量：{username} 表示用户昵称</div>
             </el-form-item>
-            <el-form-item label="频率(秒)">
-              <el-input v-model.number="rule.frequency" type="number" />
+            <el-form-item label="回复频率(秒)">
+              <el-input-number 
+                v-model.number="rule.frequency" 
+                :min="10" 
+                :max="3600" 
+                :step="10"
+                controls-position="right"
+              />
+              <div class="form-help-text">设置最小回复间隔，单位：秒（默认60秒）</div>
             </el-form-item>
             <el-form-item label="每日上限">
-              <el-input v-model.number="rule.daily_limit" type="number" />
+              <el-input-number 
+                v-model.number="rule.daily_limit" 
+                :min="1" 
+                :max="10000" 
+                :step="10"
+                controls-position="right"
+              />
+              <div class="form-help-text">每天最大回复次数（默认100次）</div>
+            </el-form-item>
+            <el-form-item label="时间段控制">
+              <el-row :gutter="10">
+                <el-col :span="10">
+                  <el-time-picker
+                    v-model="rule.start_time"
+                    placeholder="开始时间"
+                    format="HH:mm"
+                    value-format="HH:mm"
+                    style="width: 100%"
+                  />
+                </el-col>
+                <el-col :span="2" style="text-align: center; line-height: 32px;">至</el-col>
+                <el-col :span="10">
+                  <el-time-picker
+                    v-model="rule.end_time"
+                    placeholder="结束时间"
+                    format="HH:mm"
+                    value-format="HH:mm"
+                    style="width: 100%"
+                  />
+                </el-col>
+              </el-row>
+              <div class="form-help-text">设置自动回复的有效时间段（留空表示全天有效）</div>
             </el-form-item>
             <el-form-item>
               <el-switch v-model="rule.is_active" active-text="启用" inactive-text="停用" />
             </el-form-item>
-            <el-button type="primary" @click="saveRule">保存规则</el-button>
-            <el-button @click="start">启动自动回复</el-button>
-            <el-button type="danger" @click="stop">停止</el-button>
+            <el-button-group>
+              <el-button type="primary" @click="saveRule">保存规则</el-button>
+              <el-button @click="start">启动自动回复</el-button>
+              <el-button type="danger" @click="stop">停止</el-button>
+            </el-button-group>
+            <el-button @click="loadTemplate" style="margin-left: 10px;">使用模板</el-button>
           </el-form>
         </el-card>
       </div>
@@ -71,20 +130,67 @@
       <div>
         <p>平台：闲鱼</p>
         <p>账号昵称：{{ loginDialog.username }}</p>
-        <el-alert title="请按照以下步骤操作：1. 在新标签页打开闲鱼网站；2. 登录你的账号；3. 按F12打开开发者工具，切换到Network或Application标签页；4. 复制登录后的Cookie；5. 粘贴到下方输入框；6. 选择是否使用无头浏览器；7. 点击保存Cookie。" type="info" show-icon />
-        <el-divider />
-        <p>粘贴登录后的 Cookie：</p>
-        <el-input v-model="loginDialog.cookie" type="textarea" placeholder="粘贴 Cookie 文本" rows="6" />
-        <div style="margin-top: 10px;">
-          <el-switch 
-            v-model="loginDialog.headless" 
-            active-text="无头模式（后台运行）" 
-            inactive-text="可视化模式（显示浏览器）" 
-          />
+        <div v-if="loginDialog.status === 'idle' || loginDialog.status === 'starting'">
+          <el-alert title="请按照以下步骤操作：" type="info" show-icon />
+          <ol style="margin: 10px 0; padding-left: 20px;">
+            <li>点击下方"一键登录"按钮</li>
+            <li>在弹出的浏览器窗口中登录您的账号</li>
+            <li>系统将自动获取登录信息并完成绑定</li>
+          </ol>
+          <div style="margin-top: 20px; text-align: center;">
+            <el-button type="primary" @click="startOneClickLogin" :loading="loginDialog.loading">
+              {{ loginDialog.loading ? '正在启动浏览器...' : '一键登录' }}
+            </el-button>
+          </div>
+          <div style="margin-top: 10px;">
+            <el-switch 
+              v-model="loginDialog.headless" 
+              active-text="无头模式（后台运行）" 
+              inactive-text="可视化模式（显示浏览器）" 
+            />
+          </div>
         </div>
-        <div style="margin-top:10px; text-align:right">
-          <el-button @click="loginDialogVisible=false">取消</el-button>
-          <el-button type="primary" @click="saveCookieFromIframe">保存Cookie</el-button>
+        <div v-else-if="loginDialog.status === 'waiting'">
+          <el-alert title="正在等待您完成登录，请在弹出的浏览器窗口中登录您的账号..." type="warning" show-icon />
+          <div style="text-align: center; margin-top: 20px;">
+            <el-icon class="is-loading" style="font-size: 24px;"><component is="Loading" /></el-icon>
+            <p style="margin-top: 10px;">系统将在后台等待您完成登录</p>
+          </div>
+          <div style="margin-top: 20px; text-align: center;">
+            <el-button @click="checkLoginStatus">刷新状态</el-button>
+            <el-button @click="cancelLogin">取消</el-button>
+          </div>
+        </div>
+        <div v-else-if="loginDialog.status === 'logged_in'">
+          <el-alert title="登录成功！账号已绑定。" type="success" show-icon />
+          <div style="margin-top: 20px; text-align: center;">
+            <el-button type="primary" @click="finishLogin">完成绑定</el-button>
+          </div>
+        </div>
+        <div v-else-if="loginDialog.status === 'failed'">
+          <el-alert title="登录失败，请重试。" type="error" show-icon />
+          <div style="margin-top: 20px; text-align: center;">
+            <el-button @click="retryLogin">重新开始</el-button>
+            <el-button @click="manualInputCookie">手动输入Cookie</el-button>
+          </div>
+        </div>
+        <!-- 手动输入Cookie模式 -->
+        <div v-else-if="loginDialog.mode === 'manual'">
+          <el-alert title="请在新标签页登录您的账号，然后复制Cookie粘贴到下方：" type="info" show-icon style="margin-bottom: 15px;" />
+          <p>粘贴登录后的 Cookie：</p>
+          <el-input v-model="loginDialog.cookie" type="textarea" placeholder="粘贴 Cookie 文本" rows="6" />
+          <div style="margin-top: 10px;">
+            <el-switch 
+              v-model="loginDialog.headless" 
+              active-text="无头模式（后台运行）" 
+              inactive-text="可视化模式（显示浏览器）" 
+            />
+          </div>
+          <div style="margin-top:10px; text-align:right">
+            <el-button @click="goBackToSelection">返回</el-button>
+            <el-button @click="loginDialogVisible=false">取消</el-button>
+            <el-button type="primary" @click="saveCookieFromIframe">保存Cookie</el-button>
+          </div>
         </div>
       </div>
     </el-dialog>
@@ -93,8 +199,9 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { xianyuAutoReplyApi } from '@/api/xianyuAutoReply'
+import { autoReplyApi } from '@/api/autoReply'
 
 const platform = 'xianyu'
 const accounts = ref([])
@@ -102,10 +209,198 @@ const logs = ref([])
 const page = ref(1)
 const pageSize = ref(10)
 const total = ref(0)
-const rule = ref({ platform, keywords: '', reply_content: '', frequency: 60, daily_limit: 100, is_active: true })
+const rule = ref({ platform, keywords: '', reply_content: '', frequency: 60, daily_limit: 100, is_active: true, start_time: null, end_time: null })
 const form = ref({ username: '' })
 const loginDialogVisible = ref(false)
-const loginDialog = ref({ username: '', cookie: '' , status: 'idle', accountId: null, headless: true})
+const loginDialog = ref({ 
+  username: '', 
+  cookie: '', 
+  status: 'idle', 
+  accountId: null, 
+  headless: true,
+  loading: false,
+  mode: 'auto' // 'auto' for one-click login, 'manual' for manual cookie input
+})
+
+// 添加状态跟踪
+const botStatus = ref({ running: false })
+
+// 一键登录功能
+const startOneClickLogin = async () => {
+  if (!loginDialog.value.username) {
+    ElMessage.warning('请先输入账号昵称')
+    return
+  }
+  
+  loginDialog.value.loading = true
+  loginDialog.value.status = 'starting'
+  
+  try {
+    // 调用后端API启动登录流程 - 闲鱼使用特定的API
+    const token = localStorage.getItem('token')
+    if (!token) {
+      ElMessage.warning('请先登录后再启动一键登录')
+      return
+    }
+    
+    // 调用闲鱼特定的登录启动API
+    const response = await autoReplyApi.loginStart({ 
+      platform, 
+      username: loginDialog.value.username,
+      headless: loginDialog.value.headless 
+    })
+    
+    if (response.code === 200) {
+      loginDialog.value.accountId = response.data.accountId
+      loginDialog.value.status = 'waiting'
+      ElMessage.success('浏览器已启动，请在弹出窗口中登录您的账号')
+      
+      // 开始轮询检查登录状态
+      startPollingLoginStatus()
+    } else {
+      throw new Error(response.msg || '启动登录失败')
+    }
+  } catch (error) {
+    console.error('一键登录失败:', error)
+    ElMessage.error(`一键登录失败: ${error.message || error}`)
+    loginDialog.value.status = 'failed'
+  } finally {
+    loginDialog.value.loading = false
+  }
+}
+
+// 开始轮询登录状态
+let pollingInterval = null
+const startPollingLoginStatus = () => {
+  // 如果已有轮询，先清除
+  if (pollingInterval) {
+    clearInterval(pollingInterval)
+  }
+  
+  // 每3秒检查一次登录状态
+  pollingInterval = setInterval(async () => {
+    await checkLoginStatus()
+  }, 3000)
+}
+
+// 检查登录状态
+const checkLoginStatus = async () => {
+  if (!loginDialog.value.username || !loginDialog.value.accountId) {
+    return
+  }
+  
+  try {
+    const token = localStorage.getItem('token')
+    if (!token) {
+      ElMessage.warning('请先登录后再检查登录状态')
+      return
+    }
+    
+    const response = await autoReplyApi.loginStatus(platform, loginDialog.value.username)
+    
+    if (response.code === 200) {
+      const status = response.data.status
+      
+      if (status === 'logged_in') {
+        // 登录成功
+        loginDialog.value.status = 'logged_in'
+        loginDialog.value.cookie = response.data.cookie
+        
+        // 停止轮询
+        if (pollingInterval) {
+          clearInterval(pollingInterval)
+          pollingInterval = null
+        }
+        
+        ElMessage.success('登录成功！')
+      } else if (status === 'waiting') {
+        // 继续等待，保持当前状态
+        loginDialog.value.status = 'waiting'
+      }
+    }
+  } catch (error) {
+    console.error('检查登录状态失败:', error)
+  }
+}
+
+// 完成登录
+const finishLogin = async () => {
+  try {
+    const token = localStorage.getItem('token')
+    if (!token) {
+      ElMessage.warning('请先登录后再完成登录')
+      return
+    }
+    
+    // 更新账号信息，保存cookie和headless设置
+    await xianyuAutoReplyApi.upsertAccount({ 
+      username: loginDialog.value.username,
+      cookie: loginDialog.value.cookie,
+      headless: loginDialog.value.headless
+    })
+    
+    ElMessage.success('账号绑定成功！')
+    loginDialogVisible.value = false
+    
+    // 刷新数据
+    await fetchAll()
+  } catch (error) {
+    console.error('完成登录失败:', error)
+    ElMessage.error(`完成绑定失败: ${error.message || error}`)
+  }
+}
+
+// 取消登录
+const cancelLogin = () => {
+  if (pollingInterval) {
+    clearInterval(pollingInterval)
+    pollingInterval = null
+  }
+  loginDialog.value.status = 'idle'
+  loginDialog.value.loading = false
+}
+
+// 重试登录
+const retryLogin = () => {
+  loginDialog.value.status = 'idle'
+  loginDialog.value.cookie = ''
+  loginDialog.value.accountId = null
+}
+
+// 手动输入Cookie
+const manualInputCookie = () => {
+  loginDialog.value.mode = 'manual'
+}
+
+// 返回选择界面
+const goBackToSelection = () => {
+  loginDialog.value.mode = 'auto'
+  loginDialog.value.status = 'idle'
+}
+
+// 修改原来的submitAccount函数
+const submitAccount = async () => {
+  const token = localStorage.getItem('token')
+  if (!token) {
+    ElMessage.warning('请先登录后再绑定账号')
+    return
+  }
+  
+  if (!form.value.username) {
+    ElMessage.warning('请输入账号昵称')
+    return
+  }
+  
+  // 设置对话框数据
+  loginDialog.value.username = form.value.username
+  loginDialog.value.status = 'idle'
+  loginDialog.value.cookie = ''
+  loginDialog.value.accountId = null
+  loginDialog.value.mode = 'auto'
+  
+  // 显示对话框
+  loginDialogVisible.value = true
+}
 
 const fetchAll = async () => {
   const token = localStorage.getItem('token')
@@ -126,31 +421,7 @@ const fetchLogs = async () => {
   total.value = l.data.total || 0
 }
 
-const submitAccount = async () => {
-  if (!form.value.username) {
-    ElMessage.warning('请输入账号昵称')
-    return
-  }
-  // 设置对话框数据
-  loginDialog.value.username = form.value.username
-  loginDialog.value.status = 'starting'
-  loginDialog.value.cookie = ''
-  loginDialog.value.accountId = null
-  
-  try {
-    // 创建账号记录 - 调用不同的API
-    const res = await xianyuAutoReplyApi.upsertAccount({ 
-      username: form.value.username,
-      cookie: ''
-    })
-    loginDialog.value.accountId = res?.data?.id || null
-    form.value.username = ''
-    // 显示对话框
-    loginDialogVisible.value = true
-  } catch (e) {
-    ElMessage.error('创建账号失败，请稍后重试')
-  }
-}
+
 
 const saveCookieFromIframe = async () => {
   if (!loginDialog.value.accountId) {
@@ -201,11 +472,52 @@ const handleDelete = async (row) => {
   }
 }
 
+// 添加模板功能
+const loadTemplate = () => {
+  ElMessageBox.prompt('选择预设模板:', '使用模板', {
+    inputValue: 'welcome',
+    inputOptions: {
+      'welcome': '欢迎语模板',
+      'business': '商务咨询模板',
+      'out_of_office': '下班时段模板'
+    },
+    inputPlaceholder: '请选择模板类型'
+  }).then(({ value }) => {
+    switch(value) {
+      case 'welcome':
+        rule.value.keywords = '你好,您好,hi,hello,在吗,有人在吗';
+        rule.value.reply_content = '您好！感谢您的关注，我会尽快回复您的消息。';
+        break;
+      case 'business':
+        rule.value.keywords = '咨询,价格,多少钱,费用,合作,代理,购买,买';
+        rule.value.reply_content = '您好！感谢您的咨询，我们的客服会尽快联系您，也可以留下联系方式方便我们回复您。';
+        break;
+      case 'out_of_office':
+        rule.value.keywords = '工作,上班时间,几点,什么时候';
+        rule.value.reply_content = '您好！我们会在工作时间(9:00-18:00)尽快回复您，非工作时间留言我们会第二天统一处理。';
+        rule.value.start_time = '09:00';
+        rule.value.end_time = '18:00';
+        break;
+      default:
+        rule.value.keywords = '';
+        rule.value.reply_content = '';
+    }
+    ElMessage.success('已加载模板');
+  }).catch(() => {
+    // 用户取消选择
+  });
+};
+
 const saveRule = async () => {
   const token = localStorage.getItem('token')
   if (!token) { ElMessage.warning('请先登录后再保存规则'); return }
   try {
-    await xianyuAutoReplyApi.saveRule({ ...rule.value, platform })
+    await xianyuAutoReplyApi.saveRule({ 
+      ...rule.value, 
+      platform,
+      start_time: rule.value.start_time,
+      end_time: rule.value.end_time
+    })
     ElMessage.success('规则保存成功')
     fetchAll()
   } catch (e) {
@@ -217,9 +529,16 @@ const saveRule = async () => {
 const start = async () => {
   const token = localStorage.getItem('token')
   if (!token) { ElMessage.warning('请先登录后再启动'); return }
+  // 从账号列表中选择第一个激活的账号
+  if (accounts.value.length === 0) {
+    ElMessage.warning('请先添加并配置账号')
+    return
+  }
+  const firstAccount = accounts.value[0]
   try {
-    await xianyuAutoReplyApi.start()
+    await xianyuAutoReplyApi.start({ account_id: firstAccount.id })
     ElMessage.success('自动回复已启动')
+    botStatus.value.running = true
   } catch (e) {
     ElMessage.error('启动失败')
     console.error(e)
@@ -230,8 +549,9 @@ const stop = async () => {
   const token = localStorage.getItem('token')
   if (!token) { ElMessage.warning('请先登录后再停止'); return }
   try {
-    await xianyuAutoReplyApi.stop()
+    await xianyuAutoReplyApi.stop({ platform: 'xianyu' })
     ElMessage.success('自动回复已停止')
+    botStatus.value.running = false
   } catch (e) {
     ElMessage.error('停止失败')
     console.error(e)
@@ -247,12 +567,89 @@ const handlePageChange = (p) => {
 </script>
 
 <style scoped>
-.auto-reply { padding: 10px }
-.row-top { display: flex; gap: 16px; }
-.panel { flex: 1; display: flex; }
-.panel-card { width: 100%; height: 100%; display: flex; flex-direction: column; }
-.section-title { font-size: 16px; font-weight: 500; margin-bottom: 10px }
-.toolbar { display: flex; gap: 8px; margin-top: 8px }
-.row-logs { margin-top: 16px; }
-.pagination { display: flex; justify-content: flex-end; margin-top: 8px; }
+.auto-reply { 
+  padding: 10px;
+  min-width: 800px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+.row-top { 
+  display: flex; 
+  gap: 16px; 
+  flex-wrap: wrap;
+}
+
+.panel { 
+  flex: 1; 
+  min-width: 300px;
+  display: flex; 
+}
+
+.panel-card { 
+  width: 100%; 
+  height: 100%; 
+  display: flex; 
+  flex-direction: column; 
+}
+
+.section-title { 
+  font-size: 16px; 
+  font-weight: 500; 
+  margin-bottom: 10px;
+  color: #303133;
+}
+
+.toolbar { 
+  display: flex; 
+  gap: 8px; 
+  margin-top: 8px;
+  align-items: center;
+}
+
+.row-logs { 
+  margin-top: 16px; 
+}
+
+.pagination { 
+  display: flex; 
+  justify-content: flex-end; 
+  margin-top: 8px; 
+}
+
+.form-help-text {
+  font-size: 12px;
+  color: #909399;
+  margin-top: 5px;
+}
+
+.status-indicator {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 5px;
+}
+
+.status-running {
+  background-color: #409eff;
+}
+
+.status-stopped {
+  background-color: #f56c6c;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .row-top {
+    flex-direction: column;
+  }
+  
+  .panel {
+    min-width: 100%;
+  }
+  
+  .auto-reply {
+    padding: 5px;
+  }
+}
 </style>

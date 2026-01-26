@@ -4,7 +4,7 @@ import { http } from '@/utils/request'
 export const domainPoolApi = {
   // 获取域名池列表
   getList(params) {
-    return http.get('/api/domainpool/list', params)
+    return http.get('/api/domainpool/list', { params })
   },
   
   // 根据ID获取域名池详情

@@ -2,7 +2,9 @@ import { http } from '@/utils/request'
 
 export const autoReplyApi = {
   listAccounts(platform) {
-    return http.get('/api/auto-reply/accounts', { platform })
+    return http.get('/api/auto-reply/accounts', { 
+      params: { platform }
+    })
   },
   upsertAccount(data) {
     return http.post('/api/auto-reply/accounts', data)
@@ -14,19 +16,25 @@ export const autoReplyApi = {
     return http.post('/api/auto-reply/start-login', data)
   },
   loginStatus(platform, username) {
-    return http.get('/api/auto-reply/login-status', { platform, username })
+    return http.get('/api/auto-reply/login-status', { 
+      params: { platform, username }
+    })
   },
   saveCookies(id, cookie) {
     return http.post(`/api/auto-reply/accounts/${id}/cookies`, { cookie })
   },
   getRule(platform) {
-    return http.get('/api/auto-reply/rule', { platform })
+    return http.get('/api/auto-reply/rule', { 
+      params: { platform }
+    })
   },
   saveRule(data) {
     return http.post('/api/auto-reply/rule', data)
   },
   listLogs(platform, { page = 1, page_size = 10 } = {}) {
-    return http.get('/api/auto-reply/logs', { platform, page, page_size })
+    return http.get('/api/auto-reply/logs', { 
+      params: { platform, page, page_size }
+    })
   },
   start(data) {
     return http.post('/api/auto-reply/start', data)

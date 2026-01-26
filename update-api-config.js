@@ -6,7 +6,7 @@ localStorage.removeItem('apiConfig');
 
 // 2. 设置正确的API配置（仅基础地址）
 const correctConfig = {
-  baseUrl: 'http://localhost:8086'
+  baseUrl: window.location.origin.replace(/:\d+$/, ':8086') // 替换端口号为8086
 };
 
 // 3. 保存新配置

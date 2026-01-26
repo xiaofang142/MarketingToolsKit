@@ -3,7 +3,7 @@ import { ElMessage } from 'element-plus'
 
 // 创建axios实例（不再使用X-API-KEY）
 const createRequestInstance = () => {
-  let apiBaseUrl = 'http://localhost:8086'
+  let apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8086'
   try {
     const configStr = localStorage.getItem('apiConfig')
     if (configStr) {
@@ -94,7 +94,7 @@ addInterceptors()
 export const updateRequestConfig = async () => {
   const { getApiConfig } = await import('./configManager')
   const apiConfig = getApiConfig()
-  const apiBaseUrl = apiConfig.baseUrl || 'http://localhost:8086'
+  const apiBaseUrl = apiConfig.baseUrl || import.meta.env.VITE_API_BASE_URL || 'http://localhost:8086'
   request = axios.create({
     baseURL: apiBaseUrl,
     headers: {

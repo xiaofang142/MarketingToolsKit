@@ -2,7 +2,7 @@ import { http } from '@/utils/request'
 
 // 获取小红书卡片列表
 export function getXiaohongshuCardList(params) {
-  return http.get('/api/xiaohongshu/list', params)
+  return http.get('/api/xiaohongshu/list', { params })
 }
 
 // 获取小红书卡片详情
@@ -32,15 +32,15 @@ export function viewXiaohongshuCard(id) {
 
 // 获取小红书卡片统计数据
 export function getXiaohongshuCardStats(id, params) {
-  return http.get(`/api/xiaohongshu/stats/card/${id}`, params)
+  return http.get(`/api/xiaohongshu/stats/card/${id}`, { params })
 }
 
 // 获取小红书卡片总体统计数据
 export function getXiaohongshuCardOverallStats(params) {
-  return http.get('/api/xiaohongshu/stats/overall', params)
+  return http.get('/api/xiaohongshu/stats/overall', { params })
 }
 
 // 生成小红书卡片短链接
 export function generateShortLink(id) {
-  return http.post(`/api/xiaohongshu/${id}/generate-short-link`)
+  return http.post(`/api/xiaohongshu/${id}/generate-short-link`, {})
 }

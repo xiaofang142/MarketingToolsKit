@@ -125,11 +125,11 @@ const router = useRouter()
 const currentStep = ref(0)
 const agreed = ref(false)
 
-const apiConfig = reactive({ baseUrl: 'http://localhost:8086' })
-const platformBaseUrl = import.meta.env?.VITE_PLATFORM_BASE_URL || 'http://localhost:5173'
+const apiConfig = reactive({ baseUrl: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8086' })
+const platformBaseUrl = import.meta.env?.VITE_PLATFORM_BASE_URL || window.location.origin
 const initFormRef = ref(null)
 const initForm = reactive({
-  baseUrl: 'http://localhost:8086',
+  baseUrl: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8086',
   contact_email: '',
   admin_username: '',
   admin_password: ''
@@ -203,6 +203,7 @@ const handleInit = async () => {
     await updateRequestConfig()
     // 调用后端初始化接口
     const resp = await http.post('/api/merchant/init', {
+      company_name: initForm.admin_username + '_company',
       contact_email: initForm.contact_email,
       admin_username: initForm.admin_username,
       admin_password: initForm.admin_password
@@ -252,7 +253,7 @@ const resetInitialization = async () => {
       resetInitFlag()
       currentStep.value = 0
       agreed.value = false
-      apiConfig.baseUrl = 'http://localhost:8086'
+      apiConfig.baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8086'
       initForm.admin_username = ''
       initForm.admin_password = ''
       // 触发服务器端数据重置
